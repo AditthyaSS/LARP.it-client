@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LARP.it · PC 1 Customer Environment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+      // When opened directly via file: protocol or on a simple static server (e.g. python http.server)
+      // seamlessly redirect to the self-contained standalone dashboard
+      if (window.location.protocol === 'file:') {
+        window.location.replace('./standalone_dashboard.html');
+      } else {
+        // Test if Vite dev server is serving @vite/client
+        fetch('/@vite/client', { method: 'HEAD' })
+          .then(res => {
+            if (!res.ok) window.location.replace('./standalone_dashboard.html');
+          })
+          .catch(() => {
+            window.location.replace('./standalone_dashboard.html');
+          });
+      }
+    </script>
+  </head>
+  <body class="bg-[#F9F8F5] text-[#22201D] antialiased selection:bg-indigo-100 selection:text-indigo-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

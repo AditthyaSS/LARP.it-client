@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color-scheme: light;
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+body {
+  margin: 0;
+  background-color: #F9F8F5;
+  color: #22201D;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for clean enterprise look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D8D4CC;
+  border-radius: 9999px;
+  transition: background-color 180ms ease-out;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B8B3A8;
+}
+
+/* --- MOTION SYSTEM & MICRO-INTERACTIONS --- */
+
+/* Page & Tab Entrance Transitions */
+@keyframes tabEnter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-tab-enter {
+  animation: tabEnter 220ms var(--ease-spring) forwards;
+}
+
+/* Card Hover Lift */
+.card-interactive {
+  transition: transform 200ms var(--ease-spring), box-shadow 200ms var(--ease-spring), border-color 200ms ease-out;
+  will-change: transform, box-shadow;
+}
+
+.card-interactive:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+}
+
+/* Button Press Feedback */
+.btn-interactive {
+  transition: transform 120ms ease-out, background-color 150ms ease-out, box-shadow 150ms ease-out, opacity 150ms ease-out;
+}
+
+.btn-interactive:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn-interactive:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Pipeline Flow Indicator Animation */
+@keyframes flowPulse {
+  0% {
+    stroke-dashoffset: 24;
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.4;
+  }
+}
+
+.pipeline-flow-animated {
+  stroke-dasharray: 6 6;
+  animation: flowPulse 1.4s linear infinite;
+}
+
+/* JEV Privacy Shield Breathing Pulse (Restrained & Calm) */
+@keyframes shieldBreathe {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+
+.shield-pulse-active {
+  animation: shieldBreathe 2.4s ease-in-out infinite;
+}
+
+/* Subtle Quarantine Border Glow */
+@keyframes quarantineGlow {
+  0%, 100% {
+    border-color: rgba(244, 63, 94, 0.35);
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.1);
+  }
+  50% {
+    border-color: rgba(244, 63, 94, 0.65);
+    box-shadow: 0 0 12px 1px rgba(244, 63, 94, 0.15);
+  }
+}
+
+.quarantine-pulse {
+  animation: quarantineGlow 3s ease-in-out infinite;
+}
+
+/* ACK Receipt Confirmed Micro-Flash */
+@keyframes ackHighlight {
+  0% {
+    background-color: rgba(16, 185, 129, 0.2);
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.ack-confirmed-flash {
+  animation: ackHighlight 600ms var(--ease-spring) forwards;
+}
+
+/* Reduced Motion Preference Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card-interactive:hover {
+    transform: none !important;
+  }
+  .btn-interactive:active,
+  .btn-interactive:hover {
+    transform: none !important;
+  }
+}

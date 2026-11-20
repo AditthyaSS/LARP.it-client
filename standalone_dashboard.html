@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LARP.it · PC 1 Customer Environment</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React 18 & ReactDOM & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          boxShadow: {
+            'soft': '0 2px 8px -2px rgba(34, 32, 29, 0.05), 0 1px 3px -1px rgba(34, 32, 29, 0.03)',
+            'card': '0 4px 16px -4px rgba(34, 32, 29, 0.06), 0 1px 4px -1px rgba(34, 32, 29, 0.03)',
+            'modal': '0 20px 40px -8px rgba(34, 32, 29, 0.16)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #F9F8F5;
+      color: #22201D;
+      font-family: 'Inter', sans-serif;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D8D4CC; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #B8B3A8; }
+        @keyframes tabEnter {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-tab-enter {
+      animation: tabEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .card-interactive {
+      transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms ease-out;
+      will-change: transform, box-shadow;
+    }
+    .card-interactive:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+    }
+    .btn-interactive {
+      transition: transform 120ms ease-out, background-color 150ms ease-out, box-shadow 150ms ease-out, opacity 150ms ease-out;
+    }
+    .btn-interactive:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+    .btn-interactive:active:not(:disabled) {
+      transform: translateY(1px) scale(0.98);
+    }
+    @keyframes shieldBreathe {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.04); }
+    }
+    .shield-pulse-active {
+      animation: shieldBreathe 2.4s ease-in-out infinite;
+    }
+    @keyframes quarantineGlow {
+      0%, 100% {
+        border-color: rgba(244, 63, 94, 0.35);
+        box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.1);
+      }
+      50% {
+        border-color: rgba(244, 63, 94, 0.65);
+        box-shadow: 0 0 12px 1px rgba(244, 63, 94, 0.15);
+      }
+    }
+    .quarantine-pulse {
+      animation: quarantineGlow 3s ease-in-out infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .card-interactive:hover { transform: none !important; }
+      .btn-interactive:active, .btn-interactive:hover { transform: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-[#F9F8F5] text-[#22201D] antialiased">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // --- ICONS ---
+    const ShieldCheck = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+    );
+    const ShieldAlert = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+    );
+    const Server = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+    );
+    const Cpu = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+    );
+    const Activity = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    );
+    const Send = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+    );
+    const Layers = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-8.58 3.9a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-8.58 3.9a2 2 0 0 1-1.66 0L2 17.5"/></svg>
+    );
+    const FileCode = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>
+    );
+    const Settings = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    );
+    const RefreshCw = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+    );
+    const Search = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    );
+    const Columns = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/></svg>
+    );
+    const Table = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>
+    );
+    const CheckCircle2 = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+    );
+    const Clock = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    );
+    const Copy = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+    );
+    const Check = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>
+    );
+    const ChevronRight = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+    );
+    const Play = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="6 3 20 12 6 21 6 3"/></svg>
+    );
+    const Square = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
+    );
+    const RotateCcw = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    );
+    const Zap = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    );
+    const Eye = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+    );
+    const AlertTriangle = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+    );
+    const ArrowRight = ({ size = 18, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    );
+
+    // --- MOCK DATA ---
+    const INITIAL_SOURCES = [
+      { id: 'src-web-01', name: 'srv-web-01', category: 'web', adapterType: 'ebpf-agent', status: 'active', lastCollectionTime: '2026-11-21T02:51:14Z', eventsCollected: 142850, collectionRatePerSec: 148.5, environment: 'production', host: 'node-us-east-web01.internal', ip: '10.240.12.8', version: 'nginx-ingress/1.9.4', description: 'Primary customer reverse proxy & edge ingress router', metrics: { cpuPercent: 34.2, memoryPercent: 61.8, errorRate: 0.04, latencyMs: 14.2 }, recentEvents: [{ eventId: 'EVT-9041', message: 'Route /api/v1/checkout latency window 1m', decision: 'Approved' }] },
+      { id: 'src-app-01', name: 'srv-app-01', category: 'application', adapterType: 'app-sdk', status: 'active', lastCollectionTime: '2026-11-21T02:51:18Z', eventsCollected: 98412, collectionRatePerSec: 92.1, environment: 'production', host: 'node-us-east-app01.internal', ip: '10.240.14.22', version: 'core-api-v3.12.1', description: 'Core customer workflow & transaction orchestrator', metrics: { cpuPercent: 52.4, memoryPercent: 74.1, errorRate: 0.12, latencyMs: 42.8 }, recentEvents: [{ eventId: 'EVT-9045', message: 'Span /user.ProfileService/GetSettings finished', decision: 'Approved' }] },
+      { id: 'src-db-01', name: 'srv-db-01', category: 'database', adapterType: 'psutil-collector', status: 'degraded', lastCollectionTime: '2026-11-21T02:51:02Z', eventsCollected: 62450, collectionRatePerSec: 38.6, environment: 'production', host: 'db-cluster-primary.internal', ip: '10.240.20.5', version: 'postgresql-16.2', description: 'Enterprise relation store & customer ledger database', metrics: { cpuPercent: 88.6, memoryPercent: 89.2, errorRate: 2.45, latencyMs: 184.6 }, recentEvents: [{ eventId: 'EVT-9043', message: 'Connection pool saturation: 100/100 active conns', decision: 'Redacted' }] },
+      { id: 'src-auth-01', name: 'auth-service', category: 'auth', adapterType: 'syslog-forwarder', status: 'active', lastCollectionTime: '2026-11-21T02:51:22Z', eventsCollected: 45120, collectionRatePerSec: 41.2, environment: 'production', host: 'auth-gateway-svc.internal', ip: '10.240.16.14', version: 'oauth2-sso/2.8.0', description: 'Central OAuth2/OIDC identity & session manager', metrics: { cpuPercent: 28.5, memoryPercent: 44.3, errorRate: 0.01, latencyMs: 8.5 }, recentEvents: [{ eventId: 'EVT-9042', message: 'Token verification succeeded for user', decision: 'Redacted' }] },
+      { id: 'src-pay-01', name: 'payment-service', category: 'payment', adapterType: 'app-sdk', status: 'active', lastCollectionTime: '2026-11-21T02:51:19Z', eventsCollected: 21900, collectionRatePerSec: 18.4, environment: 'production', host: 'pci-isolated-pay01.internal', ip: '10.240.30.90', version: 'pay-core/4.1.0', description: 'PCI-isolated checkout & billing settlement worker', metrics: { cpuPercent: 19.8, memoryPercent: 38.5, errorRate: 0.00, latencyMs: 65.4 }, recentEvents: [{ eventId: 'EVT-9044', message: 'Batch settlement processed 154 items', decision: 'Approved' }] },
+      { id: 'src-net-01', name: 'network-gateway', category: 'network', adapterType: 'ebpf-agent', status: 'active', lastCollectionTime: '2026-11-21T02:51:25Z', eventsCollected: 210850, collectionRatePerSec: 210.8, environment: 'production', host: 'vpc-egress-gw01.internal', ip: '10.240.1.1', version: 'cilium-bpf/1.15.1', description: 'Border gateway, egress NAT & flow telemetry probe', metrics: { cpuPercent: 41.0, memoryPercent: 52.6, errorRate: 0.00, latencyMs: 2.1 }, recentEvents: [{ eventId: 'EVT-9047', message: 'Network egress flow summary window 1m', decision: 'Approved' }] }
+    ];
+
+    const INITIAL_PIPELINE_ITEMS = [
+      { id: 'pipe-001', eventId: 'EVT-9041', source: 'srv-web-01', service: 'nginx-ingress', eventType: 'metric', severity: 'info', stage: 'delivered', timestamp: '2026-11-21T02:49:12Z', privacyOutcome: 'Approved', policyRule: 'Allow-list Passed', description: 'HTTP 200 response time telemetry aggregated for route /api/v1/checkout', payloadSize: 342, fieldDecisions: [{ fieldName: 'metrics.latency_ms', originalValue: 14.2, decision: 'Approved', ruleApplied: 'Allow-list', reason: 'Numerical metric approved' }] },
+      { id: 'pipe-002', eventId: 'EVT-9042', source: 'auth-service', service: 'oauth2-sso', eventType: 'log', severity: 'medium', stage: 'delivered', timestamp: '2026-11-21T02:48:30Z', privacyOutcome: 'Redacted', policyRule: 'Secret Scrub & Pseudonymize', description: 'User login token validation event; Authorization header scrubbed and client IP pseudonymized', payloadSize: 428, fieldDecisions: [{ fieldName: 'authorization', originalValue: 'Bearer eyJhbGciOi...', sanitizedValue: '[REDACTED_SECRET]', decision: 'Redacted', ruleApplied: 'rule-secrets', reason: 'Contains Bearer token' }, { fieldName: 'client_ip', originalValue: '198.51.100.42', sanitizedValue: 'ps_ip_8f1c32', decision: 'Approved', ruleApplied: 'rule-pseudonym-ids', reason: 'HMAC-SHA256 salted IP' }] },
+      { id: 'pipe-003', eventId: 'EVT-9043', source: 'srv-db-01', service: 'postgresql-16.2', eventType: 'error', severity: 'critical', stage: 'sending', timestamp: '2026-11-21T02:50:01Z', privacyOutcome: 'Redacted', policyRule: 'Password Scrub', description: 'PostgreSQL connection pool exhaustion; DB connection string password scrubbed', payloadSize: 512, fieldDecisions: [{ fieldName: 'db_connection_uri', originalValue: 'postgres://admin:S3cr3tP@ssw0rd!@10.240.20.5:5432/ledger', sanitizedValue: 'postgres://admin:[REDACTED_PASS]@10.240.20.5:5432/ledger', decision: 'Redacted', ruleApplied: 'rule-passwords', reason: 'Scrubbed DB credentials' }] },
+      { id: 'pipe-004', eventId: 'EVT-9044', source: 'payment-service', service: 'pay-core', eventType: 'audit', severity: 'high', stage: 'queued', timestamp: '2026-11-21T02:50:18Z', privacyOutcome: 'Approved', policyRule: 'PII Field Dropped', description: 'Settlement batch audit record; raw credit card & customer emails dropped at JEV boundary', payloadSize: 388, fieldDecisions: [{ fieldName: 'pan_card_number', originalValue: '4111-XXXX-XXXX-1111', decision: 'Blocked', ruleApplied: 'rule-pii', reason: 'Strict PCI non-egress' }] },
+      { id: 'pipe-005', eventId: 'EVT-9045', source: 'srv-app-01', service: 'core-api', eventType: 'trace', severity: 'low', stage: 'approved', timestamp: '2026-11-21T02:50:45Z', privacyOutcome: 'Approved', policyRule: 'Allow-list Passed', description: 'Distributed trace spans for internal RPC request pipeline', payloadSize: 295, fieldDecisions: [{ fieldName: 'trace_id', originalValue: '4bf92f3577b34da6a3ce929d0e0e4736', decision: 'Approved', ruleApplied: 'Allow-list', reason: 'OpenTelemetry standard trace' }] },
+      { id: 'pipe-006', eventId: 'EVT-9046', source: 'srv-web-01', service: 'nginx-ingress', eventType: 'error', severity: 'critical', stage: 'blocked', timestamp: '2026-11-21T02:50:52Z', privacyOutcome: 'Blocked', policyRule: 'Unapproved Free-Text / Heap Dump', description: 'Blocked raw memory coredump containing sensitive heap strings; prohibited from egress', payloadSize: 1840, rejectionReason: 'Event contains raw memory stack_dump violating JEV Rule 6', fieldDecisions: [{ fieldName: 'stack_dump', originalValue: '0x7fff4890 [HEAP: token=ghp_984129487124912]', decision: 'Blocked', ruleApplied: 'rule-free-text', reason: 'Raw memory dump rejected unconditionally' }] },
+      { id: 'pipe-007', eventId: 'EVT-9047', source: 'network-gateway', service: 'cilium-bpf', eventType: 'metric', severity: 'info', stage: 'privacy_review', timestamp: '2026-11-21T02:51:05Z', privacyOutcome: 'Approved', policyRule: 'IP Hashing & Allow-list', description: 'VPC egress packet count and TCP connection metrics; destination IP pseudonymized', payloadSize: 310, fieldDecisions: [{ fieldName: 'dest_ip', originalValue: '198.51.100.99', sanitizedValue: 'ps_ip_99a38f', decision: 'Approved', ruleApplied: 'rule-pseudonym-ids', reason: 'Customer egress destination pseudonymized' }] },
+      { id: 'pipe-008', eventId: 'EVT-9048', source: 'srv-app-01', service: 'core-api', eventType: 'metric', severity: 'low', stage: 'normalized', timestamp: '2026-11-21T02:51:15Z', privacyOutcome: 'Approved', policyRule: 'Normalized ECS Schema', description: 'JVM garbage collection pause times normalized into OpenTelemetry metric envelope', payloadSize: 260, fieldDecisions: [] },
+      { id: 'pipe-009', eventId: 'EVT-9049', source: 'srv-web-01', service: 'nginx-ingress', eventType: 'log', severity: 'info', stage: 'collected', timestamp: '2026-11-21T02:51:24Z', privacyOutcome: 'Pending Review', policyRule: 'Queued for Ingestion', description: 'Raw syslog frame captured from container stdout buffer awaiting normalization', payloadSize: 285, fieldDecisions: [] }
+    ];
+
+    const INITIAL_QUEUE = [
+      { payloadId: 'PAYLOAD-ENT-8841', eventIds: ['EVT-9041'], source: 'srv-web-01', eventCount: 1, tenant: 'enterprise-production', gatewayId: 'gateway-pc1-001', createdTimestamp: '2026-11-21T02:49:15Z', payloadSizeBytes: 1420, queueStatus: 'acknowledged', attemptCount: 1, destinationUrl: 'http://localhost:8000/api/v1/ingestion/pc1/telemetry', policyVersion: 'v2.1.0-strict', receiptId: 'ACK-PC2-RECEIPT-9921', httpStatus: 200, envelope: { schema_version: '1.0.0', tenant_id: 'enterprise-production', gateway_id: 'gateway-pc1-001', payload_id: 'PAYLOAD-ENT-8841', sent_at: '2026-11-21T02:49:15Z', events: [{ event_id: 'EVT-9041', source: 'srv-web-01' }] } },
+      { payloadId: 'PAYLOAD-ENT-8843', eventIds: ['EVT-9043'], source: 'srv-db-01', eventCount: 1, tenant: 'enterprise-production', gatewayId: 'gateway-pc1-001', createdTimestamp: '2026-11-21T02:50:05Z', payloadSizeBytes: 980, queueStatus: 'retry_pending', attemptCount: 2, destinationUrl: 'http://localhost:8000/api/v1/ingestion/pc1/telemetry', policyVersion: 'v2.1.0-strict', errorDetails: 'HTTP 503 / Connection refused: PC 2 backend at http://localhost:8000 is unreachable', httpStatus: 503, envelope: { schema_version: '1.0.0', tenant_id: 'enterprise-production', gateway_id: 'gateway-pc1-001', payload_id: 'PAYLOAD-ENT-8843', sent_at: '2026-11-21T02:50:05Z', events: [] } },
+      { payloadId: 'PAYLOAD-ENT-8844', eventIds: ['EVT-9044'], source: 'payment-service', eventCount: 1, tenant: 'enterprise-production', gatewayId: 'gateway-pc1-001', createdTimestamp: '2026-11-21T02:50:22Z', payloadSizeBytes: 1240, queueStatus: 'approved', attemptCount: 0, destinationUrl: 'http://localhost:8000/api/v1/ingestion/pc1/telemetry', policyVersion: 'v2.1.0-strict', envelope: { schema_version: '1.0.0', tenant_id: 'enterprise-production', gateway_id: 'gateway-pc1-001', payload_id: 'PAYLOAD-ENT-8844', sent_at: '2026-11-21T02:50:22Z', events: [] } }
+    ];
+
+    
+    const INITIAL_ACTIVITIES = [
+      {
+        id: 'act-101',
+        timestamp: '2026-11-21T02:51:24Z',
+        type: 'event_collected',
+        title: 'Telemetry Event EVT-9049 Collected',
+        description: 'Raw syslog event buffered from srv-web-01 in local volume',
+        entityId: 'EVT-9049',
+        severity: 'info',
+        isSimulated: true
+      },
+      {
+        id: 'act-102',
+        timestamp: '2026-11-21T02:50:52Z',
+        type: 'event_blocked',
+        title: 'Raw Memory Dump Blocked by JEV Policy',
+        description: 'Event EVT-9046 was blocked: unapproved free-text stack dump violation',
+        entityId: 'EVT-9046',
+        severity: 'error',
+        isSimulated: true
+      },
+      {
+        id: 'act-103',
+        timestamp: '2026-11-21T02:50:22Z',
+        type: 'payload_created',
+        title: 'Outbound Payload PAYLOAD-ENT-8844 Prepared',
+        description: 'JEV privacy engine approved envelope with 0 secrets present',
+        entityId: 'PAYLOAD-ENT-8844',
+        severity: 'success',
+        isSimulated: true
+      },
+      {
+        id: 'act-104',
+        timestamp: '2026-11-21T02:50:05Z',
+        type: 'payload_failed',
+        title: 'Transmission Failed: PC 2 Endpoint Offline',
+        description: 'HTTP request failed: Connection refused connecting to http://localhost:8000',
+        entityId: 'PAYLOAD-ENT-8843',
+        severity: 'warning',
+        isSimulated: false
+      },
+      {
+        id: 'act-105',
+        timestamp: '2026-11-21T02:49:16Z',
+        type: 'ack_received',
+        title: 'Payload PAYLOAD-ENT-8841 Acknowledged',
+        description: 'Signed ACK receipt ACK-PC2-RECEIPT-9921 received; SHA-256 ledger updated',
+        entityId: 'PAYLOAD-ENT-8841',
+        severity: 'success',
+        isSimulated: false
+      }
+    ];
+
+    const INITIAL_PROOFS = [
+      { payloadId: 'PAYLOAD-ENT-8841', gatewayId: 'gateway-pc1-001', tenant: 'enterprise-production', policyId: 'pol-ent-2026-v21', policyVersion: 'v2.1.0-strict', eventCount: 1, timestamp: '2026-11-21T02:49:16Z', destination: 'http://localhost:8000/api/v1/ingestion/pc1/telemetry', payloadSizeBytes: 1420, sha256Hash: '4a6b2c89f01e82345d9a04bc61234857e2a9b31278c4d291e089201bc3fa9081', deliveryStatus: 'acknowledged', receiptId: 'ACK-PC2-RECEIPT-9921', httpStatus: 200, fieldsApproved: 14, fieldsRemoved: 3, fieldsRedacted: 1, fieldsPseudonymized: 2, tlsInfo: { protocol: 'TLS 1.3 (RFC 8446)', cipherSuite: 'TLS_AES_256_GCM_SHA384', certPinning: 'Verified', mTLSStatus: 'Not Required (Enterprise)' }, signatureAlgorithm: 'HMAC-SHA256 (Tenant Key)' }
+    ];
+
+    // --- MAIN APP COMPONENT ---
+    function App() {
+      const [currentTab, setCurrentTab] = useState('overview');
+      const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+      const [viewMode, setViewMode] = useState('board');
+      const [selectedItem, setSelectedItem] = useState(null);
+
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedSource, setSelectedSource] = useState('all');
+      const [selectedSeverity, setSelectedSeverity] = useState('all');
+      const [selectedOutcome, setSelectedOutcome] = useState('all');
+
+      const [sources] = useState(INITIAL_SOURCES);
+      const [pipelineEvents] = useState(INITIAL_PIPELINE_ITEMS);
+      const [queue, setQueue] = useState(INITIAL_QUEUE);
+      const [proofs, setProofs] = useState(INITIAL_PROOFS);
+      const [activities, setActivities] = useState(INITIAL_ACTIVITIES);
+      const [activitySearch, setActivitySearch] = useState('');
+      const [activitySeverityFilter, setActivitySeverityFilter] = useState('all');
+      const [selectedQueueIds, setSelectedQueueIds] = useState([]);
+      const [collectorRunning, setCollectorRunning] = useState(true);
+      const [senderPaused, setSenderPaused] = useState(false);
+
+      const [pc2Endpoint, setPc2Endpoint] = useState('http://localhost:8000');
+      const [gatewayId, setGatewayId] = useState('gateway-pc1-001');
+      const [tenantId, setTenantId] = useState('enterprise-production');
+      const [endpointStatus, setEndpointStatus] = useState('disconnected');
+      const [statusMessage, setStatusMessage] = useState(null);
+
+      // Testing sandbox state
+      const [sandboxInput, setSandboxInput] = useState(JSON.stringify({
+        event_id: 'EVT-TEST-101',
+        source: 'srv-web-01',
+        authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        user_email: 'compliance_officer@enterprise.corp',
+        client_ip: '198.51.100.84',
+        request_duration_ms: 18.2
+      }, null, 2));
+      const [sandboxResult, setSandboxResult] = useState(null);
+
+      // Filtered pipeline events
+      const filteredEvents = useMemo(() => {
+        return pipelineEvents.filter(item => {
+          const matchesSearch = !searchQuery || 
+            item.eventId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.source.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.description.toLowerCase().includes(searchQuery.toLowerCase());
+          const matchesSource = selectedSource === 'all' || item.source === selectedSource;
+          const matchesSeverity = selectedSeverity === 'all' || item.severity === selectedSeverity;
+          const matchesOutcome = selectedOutcome === 'all' || item.privacyOutcome === selectedOutcome;
+          return matchesSearch && matchesSource && matchesSeverity && matchesOutcome;
+        });
+      }, [pipelineEvents, searchQuery, selectedSource, selectedSeverity, selectedOutcome]);
+
+      // Real HTTP Sender to PC 2
+      const handleSendPayload = async (payloadId) => {
+        const item = queue.find(q => q.payloadId === payloadId);
+        if (!item) return;
+
+        const targetUrl = `${pc2Endpoint.replace(/\/+$/, '')}/api/v1/ingestion/pc1/telemetry`;
+        try {
+          const resp = await fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-LARP-Tenant': tenantId,
+              'X-LARP-Gateway': gatewayId
+            },
+            body: JSON.stringify(item.envelope)
+          });
+
+          if (resp.ok) {
+            const data = await resp.json().catch(() => ({}));
+            const receipt = data.receipt_id || `ACK-REAL-${Date.now().toString(36).toUpperCase()}`;
+            setQueue(q => q.map(x => x.payloadId === payloadId ? { ...x, queueStatus: 'acknowledged', receiptId: receipt, errorDetails: null, httpStatus: resp.status } : x));
+            setStatusMessage(`Delivered to PC 2! Receipt: ${receipt}`);
+          } else {
+            const err = `HTTP ${resp.status}: ${resp.statusText}`;
+            setQueue(q => q.map(x => x.payloadId === payloadId ? { ...x, queueStatus: 'failed', errorDetails: err, httpStatus: resp.status, attemptCount: x.attemptCount + 1 } : x));
+            setStatusMessage(`PC 2 rejected payload: ${err}`);
+          }
+        } catch (netErr) {
+          const err = `Connection Refused: PC 2 backend at ${pc2Endpoint} is offline`;
+          setQueue(q => q.map(x => x.payloadId === payloadId ? { ...x, queueStatus: 'retry_pending', errorDetails: err, httpStatus: 0, attemptCount: x.attemptCount + 1 } : x));
+          setStatusMessage(err);
+        }
+      };
+
+      const handleTestConnection = async () => {
+        const targetUrl = `${pc2Endpoint.replace(/\/+$/, '')}/api/v1/health`;
+        const start = performance.now();
+        try {
+          const resp = await fetch(targetUrl);
+          const latency = Math.round(performance.now() - start);
+          if (resp.ok) {
+            setEndpointStatus('connected');
+            setStatusMessage(`PC 2 endpoint is online & reachable (${latency}ms)!`);
+          } else {
+            setEndpointStatus('disconnected');
+            setStatusMessage(`PC 2 returned HTTP ${resp.status}`);
+          }
+        } catch (e) {
+          setEndpointStatus('disconnected');
+          setStatusMessage(`PC 2 backend unreachable at ${pc2Endpoint}`);
+        }
+      };
+
+      const handleRunSandbox = () => {
+        try {
+          const parsed = JSON.parse(sandboxInput);
+          const decisions = [];
+          const sanitized = {};
+          let isApproved = true;
+
+          for (const [k, v] of Object.entries(parsed)) {
+            const lk = k.toLowerCase();
+            if (lk.includes('stack_dump') || lk.includes('core_dump')) {
+              isApproved = false;
+              decisions.push({ field: k, orig: v, dec: 'Blocked', reason: 'Forbidden raw dump' });
+            } else if (lk.includes('token') || lk.includes('bearer') || lk.includes('secret')) {
+              decisions.push({ field: k, orig: v, sanit: '[REDACTED_SECRET]', dec: 'Redacted', reason: 'Secret token scrubbed' });
+              sanitized[k] = '[REDACTED_SECRET]';
+            } else if (lk.includes('password') || lk.includes('passwd')) {
+              decisions.push({ field: k, orig: v, sanit: '[REDACTED_PASS]', dec: 'Redacted', reason: 'Password scrubbed' });
+              sanitized[k] = '[REDACTED_PASS]';
+            } else if (lk.includes('email') || lk.includes('ssn') || lk.includes('pan_card')) {
+              decisions.push({ field: k, orig: v, dec: 'Blocked', reason: 'PII removed' });
+            } else if (lk.includes('user_id') || lk.includes('client_ip')) {
+              const pseudo = `ps_hmac_${Math.abs(k.charCodeAt(0)).toString(16)}`;
+              decisions.push({ field: k, orig: v, sanit: pseudo, dec: 'Approved', reason: 'Salted HMAC pseudonym' });
+              sanitized[k] = pseudo;
+            } else {
+              decisions.push({ field: k, orig: v, sanit: v, dec: 'Approved', reason: 'Schema allow-list' });
+              sanitized[k] = v;
+            }
+          }
+
+          setSandboxResult({ isApproved, decisions, sanitized });
+        } catch (err) {
+          alert("Invalid JSON: " + err.message);
+        }
+      };
+
+      const navList = [
+        { id: 'overview', label: 'Overview', icon: <ShieldCheck size={18} /> },
+        { id: 'sources', label: 'Sources', icon: <Server size={18} />, badge: 6 },
+        { id: 'collector', label: 'Collector', icon: <Cpu size={18} /> },
+        { id: 'privacy', label: 'Privacy & Policy', icon: <ShieldCheck size={18} />, badge: 'JEV' },
+        { id: 'queue', label: 'Outbound Queue', icon: <Layers size={18} />, badge: queue.length },
+        { id: 'egress', label: 'Egress Proof', icon: <FileCode size={18} />, badge: proofs.length },
+        { id: 'activity', label: 'Activity', icon: <Activity size={18} />, badge: activities.length },
+        { id: 'settings', label: 'Settings', icon: <Settings size={18} /> }
+      ];
+
+      return (
+        <div className="flex min-h-screen bg-[#F9F8F5] text-[#22201D]">
+          {/* SIDEBAR */}
+          <aside className={`bg-[#F2EFE9] border-r border-[#E8E5DF] transition-all flex flex-col justify-between ${isSidebarCollapsed ? 'w-16' : 'w-64'} min-h-screen z-30`}>
+            <div>
+              <div className="flex items-center justify-between px-4 py-4 border-b border-[#E8E5DF]">
+                {!isSidebarCollapsed && (
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">L</div>
+                    <div>
+                      <span className="font-extrabold text-base tracking-tight">LARP.it</span>
+                      <span className="text-[10px] block text-stone-500 font-medium -mt-1 uppercase tracking-wider">Privacy Gateway</span>
+                    </div>
+                  </div>
+                )}
+                {isSidebarCollapsed && <div className="w-8 h-8 mx-auto rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">L</div>}
+                <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1 rounded-md text-stone-400 hover:text-stone-700">
+                  <ChevronRight size={16} className={`transition-transform ${isSidebarCollapsed ? '' : 'rotate-180'}`} />
+                </button>
+              </div>
+
+              {!isSidebarCollapsed && <div className="px-4 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-stone-400">Customer Boundary (PC 1)</div>}
+
+              <nav className="px-2 py-2 space-y-1">
+                {navList.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setCurrentTab(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                      currentTab === item.id ? 'bg-white text-stone-900 shadow-xs font-semibold' : 'text-stone-600 hover:bg-[#EAE6DF]'
+                    } ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}
+                  >
+                    <span className={currentTab === item.id ? 'text-indigo-600' : 'text-stone-500'}>{item.icon}</span>
+                    {!isSidebarCollapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
+                    {!isSidebarCollapsed && item.badge !== undefined && (
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-stone-200 text-stone-700">{item.badge}</span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            <div className="p-3 border-t border-[#E8E5DF] bg-[#ECE9E2]/60">
+              {!isSidebarCollapsed ? (
+                <div className="space-y-2">
+                  <div className="bg-white/80 p-2.5 rounded-xl border border-stone-200">
+                    <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Active Tenant</span>
+                    <div className="text-xs font-bold text-stone-800 mt-0.5">Enterprise Production</div>
+                    <div className="text-[10px] text-stone-500 font-mono">Gateway: {gatewayId}</div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-stone-600 px-1">
+                    <span className="flex items-center gap-1.5 text-[11px]"><Zap size={13} className="text-indigo-600" /> Latency Budget</span>
+                    <span className="font-semibold text-emerald-700 text-[11px]">0.85ms &lt; 10s</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-2.5 h-2.5 mx-auto rounded-full bg-emerald-500" />
+              )}
+            </div>
+          </aside>
+
+          {/* MAIN WORKSPACE */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* HEADER */}
+            <header className="sticky top-0 z-20 bg-[#F9F8F5]/90 backdrop-blur-md border-b border-[#E8E5DF] px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold tracking-wider text-indigo-700 uppercase bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/60">LARP.it · Gateway</span>
+                    <span className="text-xs font-semibold text-stone-600 bg-stone-200/70 px-2 py-0.5 rounded-md">Enterprise Production</span>
+                    <span className="text-xs font-mono font-bold text-stone-500 bg-white px-2 py-0.5 rounded-md border border-stone-200">{gatewayId}</span>
+                    <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                      <span className="tracking-wide uppercase text-[11px] font-bold">SIMULATION MODE</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <h1 className="text-xl font-bold text-stone-900 tracking-tight">PC 1 · Customer Environment</h1>
+                    <span className="text-xs text-stone-500 hidden sm:inline">| Local Telemetry Gateway & Privacy Control</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs shadow-xs ${endpointStatus === 'connected' ? 'bg-emerald-50 text-emerald-900 border-emerald-200' : 'bg-stone-50 text-stone-700 border-stone-200'}`}>
+                  <span className={`w-2 h-2 rounded-full ${endpointStatus === 'connected' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                  <div className="flex flex-col text-left">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">PC 2 Ingestion</span>
+                    <span className="text-xs font-bold font-mono">{endpointStatus === 'connected' ? 'Connected' : 'Offline / Standby'}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#E8E5DF] shadow-xs">
+                  <span className={`w-2.5 h-2.5 rounded-full ${collectorRunning ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500'}`} />
+                  <div className="flex flex-col text-left">
+                    <span className="text-[11px] font-bold text-stone-700 leading-tight">{collectorRunning ? 'Trust Boundary Active' : 'Collector Paused'}</span>
+                    <span className="text-[10px] text-stone-500 leading-tight">Strict JEV Isolation</span>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            {/* CONTENT ROUTING */}
+            <main className="flex-1 p-6 max-w-7xl w-full mx-auto"><div key={currentTab} className="animate-tab-enter">
+              {/* TAB 1: OVERVIEW */}
+              {currentTab === 'overview' && (
+                <div className="space-y-6">
+                  {/* KPI CARDS (Pastel Clarity Style - Clearly Distinguishing Simulated vs Actual Network) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 mb-6">
+                    <div className="bg-[#E9E1FF] rounded-2xl p-4 flex flex-col justify-between shadow-soft border border-indigo-100/40">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold tracking-wider text-[#4A2F8A] uppercase">Sources Monitored</span>
+                        <div className="w-7 h-7 rounded-lg bg-white/70 flex items-center justify-center text-[#5E3FA2]"><Server size={14} /></div>
+                      </div>
+                      <div className="my-2 text-3xl font-extrabold text-[#2F1D59]">6</div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-[#D6C4F7]/50">
+                        <span className="font-semibold text-emerald-800">5 Active</span>
+                        <span className="text-[#6C559E] font-medium">1 Degraded</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#FFE2D5] rounded-2xl p-4 flex flex-col justify-between shadow-soft border border-orange-100/40">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold tracking-wider text-[#8A3714] uppercase">Events Collected</span>
+                        <div className="w-7 h-7 rounded-lg bg-white/70 flex items-center justify-center text-[#A84C23]"><Activity size={14} /></div>
+                      </div>
+                      <div className="my-2 text-3xl font-extrabold text-[#5A2007]">549.6 <span className="text-sm font-semibold">eps</span></div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-[#F5C7B3]/60">
+                        <span className="font-semibold text-[#8A3714]">581k total</span>
+                        <span className="text-[#A15839] font-medium">Simulated: 15m</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#D9EEFF] rounded-2xl p-4 flex flex-col justify-between shadow-soft border border-sky-100/40">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold tracking-wider text-[#145388] uppercase">Privacy Processed</span>
+                        <div className="w-7 h-7 rounded-lg bg-white/70 flex items-center justify-center text-[#2065A8]"><ShieldCheck size={14} /></div>
+                      </div>
+                      <div className="my-2 text-3xl font-extrabold text-[#0D385D]">100% <span className="text-xs font-semibold">JEV</span></div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-[#BEDDF7]/60">
+                        <span className="font-semibold text-emerald-800">4 Redacted</span>
+                        <span className="text-rose-700 font-semibold">1 Blocked</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#DCF5E7] rounded-2xl p-4 flex flex-col justify-between shadow-soft border border-emerald-100/40">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold tracking-wider text-[#165A36] uppercase">Outbound Queue</span>
+                        <div className="w-7 h-7 rounded-lg bg-white/70 flex items-center justify-center text-[#1E6F43]"><Layers size={14} /></div>
+                      </div>
+                      <div className="my-2 text-3xl font-extrabold text-[#0E3E24]">{queue.length} <span className="text-sm font-semibold">buffered</span></div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-[#BFE6CF]/60">
+                        <span className="font-semibold text-amber-800">1 Retries</span>
+                        <span className="text-[#32704E] font-medium">0 Failed</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#FEF3D6] rounded-2xl p-4 flex flex-col justify-between shadow-soft border border-amber-100/40">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold tracking-wider text-[#7A560E] uppercase">Delivery Success</span>
+                        <div className="w-7 h-7 rounded-lg bg-white/70 flex items-center justify-center text-[#8F6612]"><CheckCircle2 size={14} /></div>
+                      </div>
+                      <div className="my-2 text-3xl font-extrabold text-[#523A06]">98.4%</div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-[#EEDB9F]/60">
+                        <span className="font-semibold text-emerald-800">1,420 Confirmed</span>
+                        <span className="text-[#806324] font-medium">Actual Network</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl p-4 flex flex-col justify-between shadow-soft border border-[#E8E5DF]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold tracking-wider text-stone-500 uppercase">Last Receipt</span>
+                        <div className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center text-stone-600"><Clock size={14} /></div>
+                      </div>
+                      <div className="my-2">
+                        <div className="text-sm font-bold text-stone-900 truncate">ACK-PC2-RECEIPT-9921</div>
+                        <div className="text-[11px] text-stone-500 mt-0.5">Latency: <span className="font-semibold text-emerald-600">142ms</span></div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-100">
+                        <span className="text-emerald-700 font-semibold text-[11px]">HMAC Verified</span>
+                        <span className="text-stone-400 text-[10px]">PC 2 Ingest</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TOOLBAR */}
+                  <div className="bg-white rounded-2xl p-3 border border-[#E8E5DF] shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                      <div className="flex items-center bg-[#F2EFE9] p-1 rounded-xl">
+                        <button onClick={() => setViewMode('board')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${viewMode === 'board' ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-600'}`}>
+                          <Columns size={14} /> <span>Board</span>
+                        </button>
+                        <button onClick={() => setViewMode('list')} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${viewMode === 'list' ? 'bg-stone-900 text-white shadow-xs' : 'text-stone-600'}`}>
+                          <Table size={14} /> <span>List</span>
+                        </button>
+                      </div>
+
+                      <div className="relative flex-1 min-w-[200px] max-w-md">
+                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search events, payloads, sources..."
+                          className="w-full pl-9 pr-3 py-1.5 bg-[#F9F8F5] border border-[#E8E5DF] rounded-xl text-xs text-stone-800 focus:outline-none"
+                        />
+                      </div>
+                      <span className="text-xs text-stone-500 font-medium">Showing <strong className="text-stone-800">{filteredEvents.length}</strong> items</span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)} className="bg-[#F9F8F5] border border-[#E8E5DF] text-xs rounded-xl px-2.5 py-1.5">
+                        <option value="all">All Sources (6)</option>
+                        {sources.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+
+                      <select value={selectedOutcome} onChange={(e) => setSelectedOutcome(e.target.value)} className="bg-[#F9F8F5] border border-[#E8E5DF] text-xs rounded-xl px-2.5 py-1.5">
+                        <option value="all">All Outcomes</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Redacted">Redacted</option>
+                        <option value="Blocked">Blocked</option>
+                        <option value="Pending Review">Pending Review</option>
+                      </select>
+
+                      <button
+                        onClick={() => queue.forEach(q => handleSendPayload(q.payloadId))}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs"
+                      >
+                        <Send size={13} />
+                        <span>Send Approved Batch</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* BOARD OR LIST VIEW */}
+                  {viewMode === 'board' ? (
+                    <div className="space-y-6">
+                      {/* Blocked Events Notice */}
+                      {filteredEvents.filter(x => x.stage === 'blocked').length > 0 && (
+                        <div className="bg-rose-50/80 border border-rose-200 rounded-2xl p-4 shadow-xs">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+                            <span className="text-xs font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
+                              <ShieldAlert size={14} className="text-rose-600" />
+                              <span>Blocked Telemetry Quarantine (1)</span>
+                            </span>
+                            <span className="text-xs text-rose-700">— Strictly PREVENTED from crossing trust boundary.</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {filteredEvents.filter(x => x.stage === 'blocked').map(item => (
+                              <div key={item.id} onClick={() => setSelectedItem(item)} className="bg-white rounded-xl p-3.5 border border-rose-200 shadow-xs cursor-pointer hover:border-rose-400">
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span className="font-bold text-rose-700">{item.eventId}</span>
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">BLOCKED</span>
+                                </div>
+                                <div className="text-xs font-semibold text-stone-800">{item.source} ({item.service})</div>
+                                <p className="text-xs text-stone-600 my-1">{item.description}</p>
+                                <div className="text-[11px] font-medium text-rose-700 bg-rose-50 p-1.5 rounded border border-rose-100">
+                                  Violation: {item.rejectionReason}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Columns */}
+                      <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x">
+                        {['collected', 'normalized', 'privacy_review', 'approved', 'queued', 'sending', 'delivered'].map((stg, i) => {
+                          const colItems = filteredEvents.filter(e => e.stage === stg);
+                          return (
+                            <div key={stg} className="flex-shrink-0 w-80 bg-[#F4F1EA]/80 rounded-2xl p-3 border border-[#E8E5DF] flex flex-col max-h-[720px]">
+                              <div className="flex items-center justify-between pb-3 mb-2 border-b border-[#E8E5DF]">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-stone-800 capitalize">{i + 1}. {stg.replace('_', ' ')}</span>
+                                  <span className="text-xs font-bold text-stone-500 bg-white px-2 py-0.5 rounded-full border border-stone-200">{colItems.length}</span>
+                                </div>
+                              </div>
+                              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+                                {colItems.length === 0 ? (
+                                  <div className="p-6 text-center text-xs text-stone-400 border border-dashed border-stone-300 rounded-xl bg-white/40">No events</div>
+                                ) : (
+                                  colItems.map(item => (
+                                    <div key={item.id} onClick={() => setSelectedItem(item)} className="bg-white rounded-xl p-3 border border-[#E8E5DF] shadow-xs hover:border-indigo-300 hover:shadow-card cursor-pointer transition-all hover:-translate-y-0.5">
+                                      <div className="flex justify-between items-center mb-1.5">
+                                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">{item.severity}</span>
+                                        <span className="font-mono text-[11px] font-bold text-stone-800">{item.eventId}</span>
+                                      </div>
+                                      <div className="text-xs font-bold text-stone-800 mb-1">{item.source} <span className="text-stone-400 font-normal">/ {item.service}</span></div>
+                                      <p className="text-xs text-stone-600 line-clamp-2 mb-2 leading-relaxed">{item.description}</p>
+                                      <div className="flex justify-between items-center pt-2 border-t border-stone-100 text-[10px]">
+                                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">{item.privacyOutcome}</span>
+                                        <span className="text-stone-400 truncate max-w-[120px]">{item.policyRule}</span>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    /* LIST VIEW TABLE */
+                    <div className="bg-white rounded-2xl border border-[#E8E5DF] overflow-hidden shadow-xs">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#F2EFE9] text-stone-600 font-bold uppercase text-[10px]">
+                          <tr>
+                            <th className="p-3">Event ID</th>
+                            <th className="p-3">Source / Service</th>
+                            <th className="p-3">Type</th>
+                            <th className="p-3">Severity</th>
+                            <th className="p-3">Stage</th>
+                            <th className="p-3">Privacy Outcome</th>
+                            <th className="p-3">Rule Applied</th>
+                            <th className="p-3 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-200">
+                          {filteredEvents.map(item => (
+                            <tr key={item.id} onClick={() => setSelectedItem(item)} className="hover:bg-indigo-50/40 cursor-pointer">
+                              <td className="p-3 font-mono font-bold text-stone-900">{item.eventId}</td>
+                              <td className="p-3 font-semibold text-stone-800">{item.source} <span className="text-stone-400 text-[10px] block font-normal">{item.service}</span></td>
+                              <td className="p-3 uppercase text-[10px] font-semibold text-stone-500">{item.eventType}</td>
+                              <td className="p-3"><span className="px-2 py-0.5 rounded border text-[10px] font-bold uppercase bg-stone-100 text-stone-700">{item.severity}</span></td>
+                              <td className="p-3 capitalize font-medium">{item.stage.replace('_', ' ')}</td>
+                              <td className="p-3"><span className="px-2 py-0.5 rounded border text-[10px] font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200">{item.privacyOutcome}</span></td>
+                              <td className="p-3 text-stone-600">{item.policyRule}</td>
+                              <td className="p-3 text-right">
+                                <button className="px-2.5 py-1 rounded-lg bg-stone-100 font-semibold text-stone-700 hover:bg-stone-200">Inspect</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: SOURCES */}
+              {currentTab === 'sources' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-2xl p-5 border border-[#E8E5DF] shadow-xs flex justify-between items-center">
+                    <div>
+                      <h2 className="text-lg font-bold text-stone-900">Monitored Infrastructure Sources (Enterprise)</h2>
+                      <p className="text-xs text-stone-500">Local enterprise application & server telemetry streams</p>
+                    </div>
+                    <span className="text-xs bg-amber-50 text-amber-800 border border-amber-300 font-semibold px-2.5 py-1 rounded-lg">Simulated Infrastructure</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sources.map(source => (
+                      <div key={source.id} className="bg-white rounded-2xl p-4 border border-[#E8E5DF] shadow-xs space-y-3">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-700"><Server size={16} /></div>
+                            <div>
+                              <h3 className="font-bold text-sm text-stone-900">{source.name}</h3>
+                              <span className="text-[10px] text-stone-400 font-mono">{source.host}</span>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${source.status === 'active' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+                            {source.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-600">{source.description}</p>
+                        {source.recentEvents && (
+                          <div className="p-2 bg-[#FBF9F5] rounded-xl border border-stone-200/70 text-[11px] space-y-0.5">
+                            <span className="text-[9px] uppercase font-bold text-stone-400 tracking-wider block">Latest Telemetry</span>
+                            <div className="flex justify-between font-bold text-stone-800">
+                              <span>{source.recentEvents[0].eventId}</span>
+                              <span className="text-emerald-700">{source.recentEvents[0].decision}</span>
+                            </div>
+                            <div className="text-stone-500 text-[10px] truncate">{source.recentEvents[0].message}</div>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2 border-t border-stone-100">
+                          <div className="bg-[#F9F8F5] p-1.5 rounded"><span className="text-[10px] text-stone-400 block">CPU</span><strong>{source.metrics.cpuPercent}%</strong></div>
+                          <div className="bg-[#F9F8F5] p-1.5 rounded"><span className="text-[10px] text-stone-400 block">Memory</span><strong>{source.metrics.memoryPercent}%</strong></div>
+                          <div className="bg-[#F9F8F5] p-1.5 rounded"><span className="text-[10px] text-stone-400 block">Latency</span><strong>{source.metrics.latencyMs}ms</strong></div>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-stone-400 pt-1">
+                          <span>Rate: <strong>{source.collectionRatePerSec} eps</strong></span>
+                          <span>Collected: <strong>{source.eventsCollected.toLocaleString()}</strong></span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: COLLECTOR */}
+              {currentTab === 'collector' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-2xl p-5 border border-[#E8E5DF] shadow-xs flex justify-between items-center">
+                    <div>
+                      <h2 className="text-lg font-bold text-stone-900">Local Telemetry Collection Engine</h2>
+                      <p className="text-xs text-stone-500">Collects raw metrics and logs into an isolated local container volume</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => setCollectorRunning(!collectorRunning)} className={`px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs ${collectorRunning ? 'bg-rose-600' : 'bg-emerald-600'}`}>
+                        {collectorRunning ? 'Stop Collector' : 'Start Collector'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-6 border border-[#E8E5DF] shadow-xs">
+                    <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-4">Pipeline Architecture: Source → Collection → Normalization → Privacy Processing</h3>
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-center">
+                      <div className="flex-1 w-full bg-[#FBF9F5] p-3.5 rounded-xl border border-stone-200">
+                        <Server size={18} className="mx-auto text-indigo-600 mb-1" />
+                        <span className="font-bold text-xs block">1. Customer Sources</span>
+                        <span className="text-[10px] text-stone-500">6 Monitored</span>
+                      </div>
+                      <ArrowRight size={16} className="text-stone-300 hidden md:block" />
+                      <div className="flex-1 w-full bg-[#FBF9F5] p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/20">
+                        <Cpu size={18} className="mx-auto text-indigo-600 mb-1" />
+                        <span className="font-bold text-xs block">2. Collection</span>
+                        <span className="text-[10px] text-stone-500">0.85ms Latency</span>
+                      </div>
+                      <ArrowRight size={16} className="text-stone-300 hidden md:block" />
+                      <div className="flex-1 w-full bg-[#FBF9F5] p-3.5 rounded-xl border border-stone-200">
+                        <Activity size={18} className="mx-auto text-purple-600 mb-1" />
+                        <span className="font-bold text-xs block">3. Normalization</span>
+                        <span className="text-[10px] text-stone-500">ECS Schema</span>
+                      </div>
+                      <ArrowRight size={16} className="text-stone-300 hidden md:block" />
+                      <div className="flex-1 w-full bg-[#FBF9F5] p-3.5 rounded-xl border border-stone-200">
+                        <ShieldCheck size={18} className="mx-auto text-teal-600 mb-1" />
+                        <span className="font-bold text-xs block">4. Privacy Processing</span>
+                        <span className="text-[10px] text-stone-500">JEV Strict</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: PRIVACY & POLICY & SANDBOX */}
+              {currentTab === 'privacy' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-2xl p-5 border border-[#E8E5DF] shadow-xs">
+                    <h2 className="text-lg font-bold text-stone-900">Active JEV Privacy Policy: v2.1.0-strict</h2>
+                    <p className="text-xs text-stone-500">Enforces field allow-lists, secret scrubbing, and HMAC pseudonymization locally.</p>
+                  </div>
+
+                  {/* Sandbox */}
+                  <div className="bg-white rounded-2xl p-6 border border-[#E8E5DF] shadow-xs space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="text-base font-bold text-stone-900">Policy Testing Sandbox</h3>
+                        <p className="text-xs text-stone-500">Test JEV privacy decisions on sample telemetry payloads locally.</p>
+                      </div>
+                      <button onClick={handleRunSandbox} className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs">
+                        Test Policy
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-stone-700 block mb-1">Input Telemetry (JSON)</label>
+                        <textarea
+                          value={sandboxInput}
+                          onChange={(e) => setSandboxInput(e.target.value)}
+                          rows={14}
+                          className="w-full p-3 font-mono text-xs bg-stone-900 text-emerald-300 rounded-xl border border-stone-800"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-stone-700 block mb-1">Sanitized Egress Output</label>
+                        {!sandboxResult ? (
+                          <div className="h-[295px] flex items-center justify-center p-6 text-center border border-dashed border-stone-300 rounded-xl bg-[#FBF9F5] text-stone-400 text-xs">
+                            Click "Test Policy" to evaluate privacy rules.
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className={`p-2.5 rounded-lg border text-xs font-bold ${sandboxResult.isApproved ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-300'}`}>
+                              {sandboxResult.isApproved ? '✓ APPROVED: Sanitized for Egress' : '✗ BLOCKED: Forbidden Dump'}
+                            </div>
+                            <pre className="p-3 bg-stone-900 text-stone-100 rounded-xl text-xs font-mono overflow-x-auto max-h-[240px]">
+                              {JSON.stringify(sandboxResult.sanitized, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: OUTBOUND QUEUE */}
+              {currentTab === 'queue' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-2xl p-5 border border-[#E8E5DF] shadow-xs flex justify-between items-center">
+                    <div>
+                      <h2 className="text-lg font-bold text-stone-900">Sanitized Telemetry Outbound Buffer</h2>
+                      <p className="text-xs text-stone-500">Real HTTP communication with PC 2 backend at POST /api/v1/ingestion/pc1/telemetry</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => setSenderPaused(!senderPaused)} className={`px-4 py-2 rounded-xl text-xs font-bold shadow-xs ${senderPaused ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-700'}`}>
+                        {senderPaused ? 'Resume Sender' : 'Pause Sender'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {statusMessage && (
+                    <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 font-semibold flex justify-between">
+                      <span>{statusMessage}</span>
+                      <button onClick={() => setStatusMessage(null)}>✕</button>
+                    </div>
+                  )}
+
+                  <div className="bg-white rounded-2xl border border-[#E8E5DF] overflow-hidden shadow-xs">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F2EFE9] text-stone-600 font-bold uppercase text-[10px]">
+                        <tr>
+                          <th className="p-3">Payload ID</th>
+                          <th className="p-3">Source & Events</th>
+                          <th className="p-3">Tenant / Gateway</th>
+                          <th className="p-3">Size</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Receipt / Error</th>
+                          <th className="p-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-200">
+                        {queue.map(item => (
+                          <tr key={item.payloadId}>
+                            <td className="p-3 font-mono font-bold text-stone-900">{item.payloadId}</td>
+                            <td className="p-3">
+                              <span className="font-semibold">{item.source}</span>
+                              <span className="text-[10px] text-stone-400 block font-mono">({item.eventCount} event)</span>
+                            </td>
+                            <td className="p-3 text-stone-600 text-[11px]">
+                              <div>{item.tenant}</div>
+                              <span className="font-mono text-stone-400 text-[10px]">{item.gatewayId}</span>
+                            </td>
+                            <td className="p-3 font-mono">{item.payloadSizeBytes} B</td>
+                            <td className="p-3"><span className="px-2 py-0.5 rounded border text-[10px] font-bold uppercase bg-stone-100">{item.queueStatus}</span></td>
+                            <td className="p-3 text-xs">{item.receiptId || item.errorDetails || 'Ready for dispatch'}</td>
+                            <td className="p-3 text-right">
+                              <button onClick={() => handleSendPayload(item.payloadId)} className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">
+                                Send / Retry
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 6: EGRESS PROOF */}
+              {currentTab === 'egress' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-2xl p-5 border border-[#E8E5DF] shadow-xs">
+                    <h2 className="text-lg font-bold text-stone-900">Cryptographic Egress Audit Ledger</h2>
+                    <p className="text-xs text-stone-500">SHA-256 hashes, exact byte counts, and Signed ACKs from PC 2</p>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-[#E8E5DF] overflow-hidden shadow-xs">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F2EFE9] text-stone-600 font-bold uppercase text-[10px]">
+                        <tr>
+                          <th className="p-3">Payload ID</th>
+                          <th className="p-3">Tenant / Gateway</th>
+                          <th className="p-3">Timestamp</th>
+                          <th className="p-3">Size</th>
+                          <th className="p-3">SHA-256 Hash</th>
+                          <th className="p-3">ACK Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-200">
+                        {proofs.map(p => (
+                          <tr key={p.payloadId}>
+                            <td className="p-3 font-mono font-bold text-stone-900">{p.payloadId}</td>
+                            <td className="p-3 text-stone-600 text-[11px]">{p.tenant} <span className="text-stone-400 block font-mono text-[10px]">{p.gatewayId}</span></td>
+                            <td className="p-3 text-stone-600">{p.timestamp}</td>
+                            <td className="p-3 font-mono">{p.payloadSizeBytes} B</td>
+                            <td className="p-3 font-mono text-[11px] text-stone-600">{p.sha256Hash}</td>
+                            <td className="p-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">{p.receiptId}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              
+              {/* TAB 7: ACTIVITY */}
+              {currentTab === 'activity' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-2xl p-5 border border-[#E8E5DF] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-stone-900 tracking-tight flex items-center gap-2">
+                        <Activity size={20} className="text-indigo-600" />
+                        <span>Customer Gateway Activity Feed</span>
+                      </h2>
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        Real-time audit log of local telemetry events, JEV privacy policy enforcement, and egress transmissions.
+                      </p>
+                    </div>
+                    <span className="text-xs text-stone-500 font-medium bg-[#FBF9F5] px-3 py-1.5 rounded-xl border border-stone-200 self-start md:self-auto">
+                      {activities.length} Recorded Events
+                    </span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-3 border border-[#E8E5DF] shadow-xs flex flex-wrap items-center justify-between gap-3">
+                    <div className="relative flex-1 min-w-[220px] max-w-md">
+                      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                      <input
+                        type="text"
+                        value={activitySearch}
+                        onChange={(e) => setActivitySearch(e.target.value)}
+                        placeholder="Search activity by title, entity, or keyword..."
+                        className="w-full pl-9 pr-3 py-1.5 bg-[#F9F8F5] border border-[#E8E5DF] rounded-xl text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      />
+                    </div>
+                    <select
+                      value={activitySeverityFilter}
+                      onChange={(e) => setActivitySeverityFilter(e.target.value)}
+                      className="bg-[#F9F8F5] border border-[#E8E5DF] text-stone-700 text-xs rounded-xl px-3 py-1.5 font-medium focus:outline-none"
+                    >
+                      <option value="all">All Severities</option>
+                      <option value="success">Success</option>
+                      <option value="info">Info</option>
+                      <option value="warning">Warning</option>
+                      <option value="error">Error / Blocked</option>
+                    </select>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-5 border border-[#E8E5DF] shadow-xs">
+                    <div className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-stone-200">
+                      {activities
+                        .filter(act => {
+                          const matchesSearch = !activitySearch ||
+                            act.title.toLowerCase().includes(activitySearch.toLowerCase()) ||
+                            act.description.toLowerCase().includes(activitySearch.toLowerCase()) ||
+                            act.entityId.toLowerCase().includes(activitySearch.toLowerCase());
+                          const matchesSev = activitySeverityFilter === 'all' || act.severity === activitySeverityFilter;
+                          return matchesSearch && matchesSev;
+                        })
+                        .map(item => (
+                          <div key={item.id} className="relative group">
+                            <div className="absolute -left-[27px] top-1.5 w-6 h-6 rounded-full bg-white border-2 border-stone-300 flex items-center justify-center group-hover:border-indigo-600 transition-colors shadow-2xs">
+                              {item.severity === 'error' ? <ShieldAlert size={14} className="text-rose-600" /> :
+                               item.severity === 'success' ? <ShieldCheck size={14} className="text-emerald-600" /> :
+                               item.type === 'event_collected' ? <Server size={14} className="text-stone-600" /> :
+                               <Activity size={14} className="text-indigo-600" />}
+                            </div>
+
+                            <div className="bg-[#FBF9F5] p-3.5 rounded-xl border border-stone-200/80 hover:border-indigo-200 transition-colors space-y-1.5">
+                              <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-xs font-bold text-stone-900">{item.title}</h4>
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                                    item.severity === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                                    item.severity === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200 font-bold' :
+                                    item.severity === 'warning' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                                    'bg-stone-100 text-stone-700 border-stone-200'
+                                  }`}>
+                                    {item.severity}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px] text-stone-400 font-medium">
+                                  <Clock size={12} />
+                                  <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
+                                </div>
+                              </div>
+                              <p className="text-xs text-stone-600 leading-relaxed">{item.description}</p>
+                              <div className="flex items-center justify-between text-[11px] text-stone-400 pt-1 border-t border-stone-200/50">
+                                <span className="font-mono text-[10px]">Entity: <strong className="text-stone-700">{item.entityId}</strong></span>
+                                <span className="text-[10px] bg-stone-100 px-1.5 py-0.5 rounded text-stone-500 font-mono">{item.type}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 8: SETTINGS */}
+              {currentTab === 'settings' && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-2xl p-5 border border-[#E8E5DF] shadow-xs">
+                    <h2 className="text-lg font-bold text-stone-900">Gateway & Trust Boundary Configuration</h2>
+                    <p className="text-xs text-stone-500">Manage PC 2 SaaS ingestion endpoints and cryptographic credentials</p>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-5 border border-[#E8E5DF] shadow-xs space-y-4">
+                    <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider">PC 2 SaaS Ingestion Endpoint</h3>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-stone-700 block">Base URL (VITE_PC2_API_BASE_URL)</label>
+                      <input
+                        type="text"
+                        value={pc2Endpoint}
+                        onChange={(e) => setPc2Endpoint(e.target.value)}
+                        className="w-full px-3 py-2 bg-[#F9F8F5] border border-[#E8E5DF] rounded-xl text-xs font-mono text-stone-800"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-bold text-stone-700 block mb-1">Gateway ID</label>
+                        <input
+                          type="text"
+                          value={gatewayId}
+                          onChange={(e) => setGatewayId(e.target.value)}
+                          className="w-full px-3 py-1.5 bg-[#F9F8F5] border border-[#E8E5DF] rounded-xl text-xs font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-stone-700 block mb-1">Tenant ID</label>
+                        <input
+                          type="text"
+                          value={tenantId}
+                          onChange={(e) => setTenantId(e.target.value)}
+                          className="w-full px-3 py-1.5 bg-[#F9F8F5] border border-[#E8E5DF] rounded-xl text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                    <button onClick={handleTestConnection} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-xs">
+                      Test Connection (GET /api/v1/health)
+                    </button>
+                    {statusMessage && (
+                      <div className="text-xs p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900">
+                        {statusMessage}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div></main>
+          </div>
+
+          {/* SLIDE-OVER DRAWER */}
+          {selectedItem && (
+            <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-xs">
+              <div className="w-full max-w-xl bg-white h-full shadow-modal p-6 flex flex-col justify-between border-l border-[#E8E5DF]">
+                <div>
+                  <div className="flex justify-between items-center pb-4 border-b border-[#E8E5DF]">
+                    <div>
+                      <h3 className="font-mono text-base font-bold text-stone-900">{selectedItem.eventId}</h3>
+                      <span className="text-xs text-stone-500">{selectedItem.source} / {selectedItem.service}</span>
+                    </div>
+                    <button onClick={() => setSelectedItem(null)} className="w-8 h-8 rounded-lg bg-stone-100 font-bold">✕</button>
+                  </div>
+
+                  <div className="my-4 space-y-3 text-xs">
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Privacy Outcome</span>
+                      <strong className="text-emerald-700 text-sm">{selectedItem.privacyOutcome}</strong>
+                      <span className="block text-stone-500 mt-1">Rule: {selectedItem.policyRule}</span>
+                    </div>
+
+                    <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+                      <span className="text-stone-400 block text-[10px] uppercase font-bold">Description</span>
+                      <p className="text-stone-700 mt-0.5">{selectedItem.description}</p>
+                    </div>
+
+                    <div>
+                      <span className="text-stone-400 block text-[10px] uppercase font-bold mb-1">Field Decisions</span>
+                      {selectedItem.fieldDecisions.map((fd, i) => (
+                        <div key={i} className="p-2 rounded-lg bg-stone-50 border border-stone-200 my-1 text-[11px]">
+                          <div className="font-mono font-bold text-stone-800">{fd.fieldName} → {fd.decision}</div>
+                          <div className="text-stone-500">{fd.reason}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={() => setSelectedItem(null)} className="w-full py-2 bg-stone-900 text-white rounded-xl text-xs font-bold">
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

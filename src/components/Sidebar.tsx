@@ -12,6 +12,7 @@ import {
   Network,
   Zap,
 } from './Icons';
+import { LARP_IT_LOGO } from '../assets/logoBase64';
 
 export type NavTab =
   | 'overview'
@@ -75,22 +76,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div>
         <div className="flex items-center justify-between px-4 py-4 border-b border-[#E8E5DF]/70">
           {!isCollapsed && (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-xs tracking-wider">
-                L
-              </div>
-              <div>
-                <span className="font-extrabold text-base text-[#22201D] tracking-tight">LARP.it</span>
-                <span className="text-[10px] block text-stone-500 font-medium -mt-1 uppercase tracking-wider">
-                  Privacy Gateway
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <img
+                src={LARP_IT_LOGO}
+                alt="LARP.it"
+                className="h-7 w-auto object-contain transition-transform duration-200 hover:scale-105"
+              />
+              <span className="text-[10px] block text-stone-500 font-bold uppercase tracking-wider pl-1.5 border-l border-stone-300">
+                Gateway
+              </span>
             </div>
           )}
 
           {isCollapsed && (
-            <div className="w-8 h-8 mx-auto rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-xs">
-              L
+            <div className="w-8 h-8 mx-auto flex items-center justify-center">
+              <img
+                src={LARP_IT_LOGO}
+                alt="LARP.it"
+                className="max-h-7 max-w-7 object-contain"
+              />
             </div>
           )}
 

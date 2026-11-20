@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, RefreshCw, AlertTriangle, Zap, Server, Network } from './Icons';
+import { LARP_IT_LOGO } from '../assets/logoBase64';
 
 interface HeaderProps {
   onRefresh: () => void;
@@ -46,15 +47,20 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-20 bg-[#F9F8F5]/90 backdrop-blur-md border-b border-[#E8E5DF] px-6 py-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Environment & Page Identity */}
-        <div className="flex items-start md:items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
-            <ShieldCheck size={22} className="text-white" />
+        {/* Environment & Page Identity with Official Brand Logo */}
+        <div className="flex items-start md:items-center gap-3.5">
+          <div className="flex items-center gap-3">
+            <img
+              src={LARP_IT_LOGO}
+              alt="LARP.it Logo"
+              className="h-8 md:h-9 w-auto object-contain transition-transform duration-200 hover:scale-105"
+            />
+            <div className="h-7 w-px bg-stone-300 hidden sm:block"></div>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-semibold tracking-wider text-indigo-700 uppercase bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/60">
-                LARP.it · Gateway
+                PC 1 · Gateway
               </span>
               <span className="text-xs font-semibold text-stone-600 bg-stone-200/70 px-2 py-0.5 rounded-md">
                 Enterprise Production
